@@ -34,8 +34,60 @@ interface PageState {
 }
 
 // Ensure ipcRenderer is available
+const isElectron = !!(window as any).ipcRenderer
 const ipcRenderer = (window as any).ipcRenderer || {
-  invoke: async () => [],
+  invoke: async (channel: string, ...args: any[]) => {
+    // Web Browser Fallback using LocalStorage
+    console.log(`[Browser Mode] Mocking IPC Call: ${channel}`, args)
+    
+    if (channel === 'get-pages') {
+      return JSON.parse(localStorage.getItem('mock_db_pages') || '[]')
+    }
+    
+    if (channel === 'create-page') {
+      const [newPage] = args
+      const pages = JSON.parse(localStorage.getItem('mock_db_pages') || '[]')
+      pages.push(newPage)
+      localStorage.setItem('mock_db_pages', JSON.stringify(pages))
+      return newPage.id
+    }
+    
+    if (channel === 'update-page') {
+      const [id, title, updated_at] = args
+      const pages = JSON.parse(localStorage.getItem('mock_db_pages') || '[]')
+      const newPages = pages.map((p: any) => p.id === id ? { ...p, title, updated_at } : p)
+      localStorage.setItem('mock_db_pages', JSON.stringify(newPages))
+      return
+    }
+    
+    if (channel === 'delete-page') {
+      const [id] = args
+      const pages = JSON.parse(localStorage.getItem('mock_db_pages') || '[]')
+      localStorage.setItem('mock_db_pages', JSON.stringify(pages.filter((p: any) => p.id !== id)))
+      
+      // Also delete blocks for this page
+      const allBlocks = JSON.parse(localStorage.getItem('mock_db_blocks') || '{}')
+      delete allBlocks[id]
+      localStorage.setItem('mock_db_blocks', JSON.stringify(allBlocks))
+      return
+    }
+    
+    if (channel === 'get-blocks') {
+      const [page_id] = args
+      const allBlocks = JSON.parse(localStorage.getItem('mock_db_blocks') || '{}')
+      return allBlocks[page_id] || []
+    }
+    
+    if (channel === 'save-blocks') {
+      const [page_id, blocksToSave] = args
+      const allBlocks = JSON.parse(localStorage.getItem('mock_db_blocks') || '{}')
+      allBlocks[page_id] = blocksToSave
+      localStorage.setItem('mock_db_blocks', JSON.stringify(allBlocks))
+      return
+    }
+    
+    return []
+  },
 }
 
 export const usePageStore = create<PageState>((set, get) => ({
