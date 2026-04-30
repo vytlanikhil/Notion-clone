@@ -15,6 +15,27 @@ A powerful, local-first knowledge management application inspired by Notion. Bui
 - **Local-First & Offline:** Your data never leaves your machine. Fast, secure offline storage powered by `better-sqlite3`.
 - **Beautiful UI:** Polished, responsive design utilizing Tailwind CSS and smooth animations via Framer Motion.
 
+## 🛠️ Getting Started
+
+To run this project locally on your machine, follow these steps:
+
+### 1. Clone the repository
+```bash
+git clone https://github.com/vytlanikhil/Notion-clone.git
+cd Notion-clone
+```
+
+### 2. Install dependencies
+```bash
+npm install
+```
+
+### 3. Run the application
+To start the application in development mode (which will launch both the Vite frontend and the Electron app):
+```bash
+npm run dev
+```
+
 ## 💻 Tech Stack & Specifications
 
 - **Version:** `0.0.0`
