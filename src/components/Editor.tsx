@@ -23,8 +23,39 @@ export const Editor: React.FC = () => {
   const { activePageId, blocks, saveBlocks, pages, updatePage } = usePageStore()
   const [showExport, setShowExport] = useState(false)
   const exportMenuRef = useRef<HTMLDivElement>(null)
+  
+  // Use refs for values needed in editor callbacks to avoid stale closures
+  const activePageIdRef = useRef(activePageId)
+  const saveBlocksRef = useRef(saveBlocks)
+  
+  useEffect(() => {
+    activePageIdRef.current = activePageId
+    saveBlocksRef.current = saveBlocks
+  }, [activePageId, saveBlocks])
 
   const activePage = pages.find((p) => p.id === activePageId)
+
+  // Debounced save defined before editor initialization
+  const handleSave = useCallback(
+    debounceFn((e: any) => {
+      const currentId = activePageIdRef.current
+      if (!currentId) return
+      
+      const json = e.getJSON()
+      const contentBlocks = json.content || []
+      
+      const blocksToSave = contentBlocks.map((block: any) => ({
+        id: crypto.randomUUID(),
+        page_id: currentId,
+        type: block.type,
+        content: JSON.stringify(block),
+        created_at: Date.now()
+      }))
+      
+      saveBlocksRef.current(currentId, blocksToSave)
+    }, 300),
+    []
+  )
 
   // Setup the editor
   const editor = useEditor({
@@ -45,17 +76,18 @@ export const Editor: React.FC = () => {
     },
     onBlur: ({ editor }) => {
       // Force an immediate save on blur
-      if (!activePageId) return
+      const currentId = activePageIdRef.current
+      if (!currentId) return
       const json = editor.getJSON()
       const contentBlocks = json.content || []
       const blocksToSave = contentBlocks.map((block: any) => ({
         id: crypto.randomUUID(),
-        page_id: activePageId,
+        page_id: currentId,
         type: block.type,
         content: JSON.stringify(block),
         created_at: Date.now()
       }))
-      saveBlocks(activePageId, blocksToSave)
+      saveBlocksRef.current(currentId, blocksToSave)
     },
     editorProps: {
       handleDrop: function(view, event, slice, moved) {
@@ -101,27 +133,6 @@ export const Editor: React.FC = () => {
       }
     }
   })
-
-  // Debounced save
-  const handleSave = useCallback(
-    debounceFn((e: any) => {
-      if (!activePageId) return
-      
-      const json = e.getJSON()
-      const contentBlocks = json.content || []
-      
-      const blocksToSave = contentBlocks.map((block: any) => ({
-        id: crypto.randomUUID(),
-        page_id: activePageId,
-        type: block.type,
-        content: JSON.stringify(block),
-        created_at: Date.now()
-      }))
-      
-      saveBlocks(activePageId, blocksToSave)
-    }, 300),
-    [activePageId, saveBlocks]
-  )
 
   // Load content when active page changes
   useEffect(() => {
