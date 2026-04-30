@@ -7,7 +7,7 @@ import Image from '@tiptap/extension-image'
 import CodeBlock from '@tiptap/extension-code-block'
 import Dropcursor from '@tiptap/extension-dropcursor'
 import { usePageStore } from '../store/usePageStore'
-import { Download, MoreHorizontal } from 'lucide-react'
+import { Download, MoreHorizontal, Save, Check } from 'lucide-react'
 import html2pdf from 'html2pdf.js'
 import TurndownService from 'turndown'
 
@@ -22,6 +22,7 @@ function debounceFn<T extends (...args: any[]) => any>(fn: T, delay: number) {
 export const Editor: React.FC = () => {
   const { activePageId, blocks, saveBlocks, pages, updatePage } = usePageStore()
   const [showExport, setShowExport] = useState(false)
+  const [saveStatus, setSaveStatus] = useState<'Saved' | 'Saving...' | 'Unsaved changes'>('Saved')
   const exportMenuRef = useRef<HTMLDivElement>(null)
   
   // Use refs for values needed in editor callbacks to avoid stale closures
@@ -35,26 +36,33 @@ export const Editor: React.FC = () => {
 
   const activePage = pages.find((p) => p.id === activePageId)
 
+  const forceSaveWithEditor = useCallback(async (currentEditor: any) => {
+    const currentId = activePageIdRef.current
+    if (!currentId || !currentEditor) return
+    
+    setSaveStatus('Saving...')
+    
+    const json = currentEditor.getJSON()
+    const contentBlocks = json.content || []
+    
+    const blocksToSave = contentBlocks.map((block: any) => ({
+      id: crypto.randomUUID(),
+      page_id: currentId,
+      type: block.type,
+      content: JSON.stringify(block),
+      created_at: Date.now()
+    }))
+    
+    await saveBlocksRef.current(currentId, blocksToSave)
+    setSaveStatus('Saved')
+  }, [])
+
   // Debounced save defined before editor initialization
   const handleSave = useCallback(
-    debounceFn((e: any) => {
-      const currentId = activePageIdRef.current
-      if (!currentId) return
-      
-      const json = e.getJSON()
-      const contentBlocks = json.content || []
-      
-      const blocksToSave = contentBlocks.map((block: any) => ({
-        id: crypto.randomUUID(),
-        page_id: currentId,
-        type: block.type,
-        content: JSON.stringify(block),
-        created_at: Date.now()
-      }))
-      
-      saveBlocksRef.current(currentId, blocksToSave)
-    }, 300),
-    []
+    debounceFn((currentEditor: any) => {
+      forceSaveWithEditor(currentEditor)
+    }, 500),
+    [forceSaveWithEditor]
   )
 
   // Setup the editor
@@ -72,22 +80,12 @@ export const Editor: React.FC = () => {
     ],
     content: '',
     onUpdate: ({ editor }) => {
+      setSaveStatus('Unsaved changes')
       handleSave(editor)
     },
     onBlur: ({ editor }) => {
       // Force an immediate save on blur
-      const currentId = activePageIdRef.current
-      if (!currentId) return
-      const json = editor.getJSON()
-      const contentBlocks = json.content || []
-      const blocksToSave = contentBlocks.map((block: any) => ({
-        id: crypto.randomUUID(),
-        page_id: currentId,
-        type: block.type,
-        content: JSON.stringify(block),
-        created_at: Date.now()
-      }))
-      saveBlocksRef.current(currentId, blocksToSave)
+      forceSaveWithEditor(editor)
     },
     editorProps: {
       handleDrop: function(view, event, slice, moved) {
@@ -133,6 +131,20 @@ export const Editor: React.FC = () => {
       }
     }
   })
+
+  // Keyboard shortcut for saving (Ctrl+S or Cmd+S)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        e.preventDefault()
+        if (editor) {
+          forceSaveWithEditor(editor)
+        }
+      }
+    }
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [editor, forceSaveWithEditor])
 
   // Load content when active page changes
   useEffect(() => {
@@ -221,7 +233,24 @@ export const Editor: React.FC = () => {
           <span className="text-foreground font-medium px-1 rounded">{activePage?.title || 'Untitled'}</span>
         </div>
         
-        <div className="relative flex items-center gap-1" ref={exportMenuRef}>
+        <div className="relative flex items-center gap-2" ref={exportMenuRef}>
+          {/* Status Indicator */}
+          <div className="text-xs text-foreground-muted mr-2 flex items-center min-w-[80px] justify-end">
+            {saveStatus === 'Saving...' && <span>Saving...</span>}
+            {saveStatus === 'Saved' && <span className="flex items-center gap-1"><Check className="w-3.5 h-3.5" /> Saved</span>}
+            {saveStatus === 'Unsaved changes' && <span className="italic">Unsaved changes</span>}
+          </div>
+
+          {/* Manual Save Button */}
+          <button 
+            onClick={() => editor && forceSaveWithEditor(editor)}
+            className="flex items-center gap-1.5 px-2.5 py-1 text-[14px] font-medium rounded-md hover:bg-hover text-foreground-muted hover:text-foreground transition-colors duration-150"
+            title="Save (Ctrl+S)"
+          >
+            <Save className="w-4 h-4" />
+            <span>Save</span>
+          </button>
+
           <button className="p-1.5 rounded-md hover:bg-hover text-foreground-muted hover:text-foreground transition-colors duration-150">
             <MoreHorizontal className="w-5 h-5" />
           </button>
