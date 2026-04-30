@@ -1,0 +1,196 @@
+@import "tailwindcss";
+
+@theme {
+  --color-background: var(--background);
+  --color-sidebar: var(--sidebar);
+  --color-foreground: var(--foreground);
+  --color-foreground-muted: var(--foreground-muted);
+  --color-border: var(--border);
+  --color-hover: var(--hover);
+  --color-active: var(--active);
+  --color-popover: var(--popover);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+}
+
+:root {
+  --background: #ffffff;
+  --sidebar: #fbfbfa;
+  --foreground: #37352f;
+  --foreground-muted: #787774;
+  --border: #e9e9e7;
+  --hover: rgba(55, 53, 47, 0.08);
+  --active: rgba(55, 53, 47, 0.16);
+  --popover: #ffffff;
+  --destructive: #eb5757;
+  --destructive-foreground: #ffffff;
+}
+
+.dark {
+  --background: #191919;
+  --sidebar: #202020;
+  --foreground: #ffffff;
+  --foreground-muted: rgba(255, 255, 255, 0.5);
+  --border: #2f2f2f;
+  --hover: rgba(255, 255, 255, 0.055);
+  --active: rgba(255, 255, 255, 0.11);
+  --popover: #252525;
+  --destructive: #eb5757;
+  --destructive-foreground: #ffffff;
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, "Apple Color Emoji", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol";
+  -webkit-font-smoothing: antialiased;
+}
+
+* {
+  border-color: var(--border);
+}
+
+/* Scrollbar styling for a cleaner look */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--foreground-muted);
+}
+
+/* TipTap Editor Premium Styles */
+.ProseMirror {
+  outline: none;
+  min-height: calc(100vh - 200px);
+  padding-bottom: 20vh;
+}
+
+.ProseMirror p {
+  margin-top: 0.25em;
+  margin-bottom: 0.25em;
+  line-height: 1.6;
+  font-size: 16px;
+  color: var(--foreground);
+}
+
+.ProseMirror p.is-editor-empty:first-child::before {
+  color: var(--foreground-muted);
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+}
+
+.ProseMirror h1 {
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin-top: 1.5em;
+  margin-bottom: 0.5em;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+
+.ProseMirror h2 {
+  font-size: 1.75rem;
+  font-weight: 600;
+  margin-top: 1.4em;
+  margin-bottom: 0.4em;
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+}
+
+.ProseMirror h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-top: 1em;
+  margin-bottom: 0.25em;
+  line-height: 1.4;
+}
+
+.ProseMirror ul,
+.ProseMirror ol {
+  padding-left: 1.5rem;
+  margin-top: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.ProseMirror li p {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+.ProseMirror code {
+  background-color: var(--hover);
+  color: var(--destructive);
+  padding: 0.2em 0.4em;
+  border-radius: 3px;
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace;
+  font-size: 85%;
+}
+
+.ProseMirror pre {
+  background-color: var(--sidebar);
+  border: 1px solid var(--border);
+  color: var(--foreground);
+  padding: 1rem 1.25rem;
+  border-radius: 6px;
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+  overflow-x: auto;
+}
+
+.ProseMirror pre code {
+  background-color: transparent;
+  color: inherit;
+  padding: 0;
+  font-size: 14px;
+}
+
+.ProseMirror img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 4px;
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+ul[data-type="taskList"] {
+  list-style: none;
+  padding: 0;
+}
+
+ul[data-type="taskList"] p {
+  margin: 0;
+}
+
+ul[data-type="taskList"] li {
+  display: flex;
+  margin-bottom: 0.25em;
+}
+
+ul[data-type="taskList"] li > label {
+  flex: 0 0 auto;
+  margin-right: 0.5rem;
+  margin-top: 0.2rem;
+  user-select: none;
+  cursor: pointer;
+}
+
+ul[data-type="taskList"] li > label input[type="checkbox"] {
+  accent-color: var(--foreground);
+  width: 16px;
+  height: 16px;
+}
+
+ul[data-type="taskList"] li > div {
+  flex: 1 1 auto;
+}
