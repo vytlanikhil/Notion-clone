@@ -49,6 +49,13 @@ export const usePageStore = create<PageState>((set, get) => ({
     try {
       const pages = await ipcRenderer.invoke('get-pages')
       set({ pages })
+      
+      const lastActive = localStorage.getItem('lastActivePageId')
+      const currentActive = get().activePageId
+      if (!currentActive && pages.length > 0) {
+        const pageToSelect = pages.find(p => p.id === lastActive) || pages[0]
+        get().setActivePage(pageToSelect.id)
+      }
     } catch (error) {
       console.error('Failed to fetch pages', error)
     } finally {
@@ -67,7 +74,8 @@ export const usePageStore = create<PageState>((set, get) => ({
     
     try {
       await ipcRenderer.invoke('create-page', newPage)
-      set((state) => ({ pages: [...state.pages, newPage], activePageId: newPage.id }))
+      set((state) => ({ pages: [...state.pages, newPage] }))
+      get().setActivePage(newPage.id)
       return newPage.id
     } catch (error) {
       console.error('Failed to create page', error)
@@ -90,10 +98,16 @@ export const usePageStore = create<PageState>((set, get) => ({
   deletePage: async (id: string) => {
     try {
       await ipcRenderer.invoke('delete-page', id)
-      set((state) => ({
-        pages: state.pages.filter((p) => p.id !== id),
-        activePageId: state.activePageId === id ? null : state.activePageId,
-      }))
+      set((state) => {
+        const newPages = state.pages.filter((p) => p.id !== id)
+        const newActiveId = state.activePageId === id ? (newPages[0]?.id || null) : state.activePageId
+        if (state.activePageId === id) {
+           get().setActivePage(newActiveId)
+        }
+        return {
+          pages: newPages,
+        }
+      })
     } catch (error) {
       console.error('Failed to delete page', error)
     }
@@ -102,8 +116,10 @@ export const usePageStore = create<PageState>((set, get) => ({
   setActivePage: (id: string | null) => {
     set({ activePageId: id })
     if (id) {
+      localStorage.setItem('lastActivePageId', id)
       get().fetchBlocks(id)
     } else {
+      localStorage.removeItem('lastActivePageId')
       set({ blocks: [] })
     }
   },

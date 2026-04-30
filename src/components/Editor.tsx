@@ -43,6 +43,20 @@ export const Editor: React.FC = () => {
     onUpdate: ({ editor }) => {
       handleSave(editor)
     },
+    onBlur: ({ editor }) => {
+      // Force an immediate save on blur
+      if (!activePageId) return
+      const json = editor.getJSON()
+      const contentBlocks = json.content || []
+      const blocksToSave = contentBlocks.map((block: any) => ({
+        id: crypto.randomUUID(),
+        page_id: activePageId,
+        type: block.type,
+        content: JSON.stringify(block),
+        created_at: Date.now()
+      }))
+      saveBlocks(activePageId, blocksToSave)
+    },
     editorProps: {
       handleDrop: function(view, event, slice, moved) {
         if (!moved && event.dataTransfer && event.dataTransfer.files && event.dataTransfer.files[0]) {
@@ -105,7 +119,7 @@ export const Editor: React.FC = () => {
       }))
       
       saveBlocks(activePageId, blocksToSave)
-    }, 1000),
+    }, 300),
     [activePageId, saveBlocks]
   )
 
