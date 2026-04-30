@@ -22,3 +22,8 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Local Database
+notion_clone.db
+notion_clone.db-wal
+notion_clone.db-shm

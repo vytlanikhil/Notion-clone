@@ -3,7 +3,10 @@ import path from 'node:path'
 import { app } from 'electron'
 
 // Define the path for the SQLite database
-const dbPath = path.join(app.getPath('userData'), 'notion_clone.db')
+const isDev = !app.isPackaged;
+const dbPath = isDev 
+  ? path.join(process.cwd(), 'notion_clone.db')
+  : path.join(app.getPath('userData'), 'notion_clone.db');
 
 // Initialize the database
 const db = new Database(dbPath)
