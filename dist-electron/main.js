@@ -3,7 +3,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import Database from "better-sqlite3";
 //#region electron/db.ts
-var db = new Database(path.join(app.getPath("userData"), "notion_clone.db"));
+var db = new Database(!app.isPackaged ? path.join(process.cwd(), "notion_clone.db") : path.join(app.getPath("userData"), "notion_clone.db"));
 db.pragma("journal_mode = WAL");
 var initSchema = () => {
 	db.exec(`

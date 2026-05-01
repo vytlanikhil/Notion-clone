@@ -6,6 +6,10 @@ import TaskItem from '@tiptap/extension-task-item'
 import Image from '@tiptap/extension-image'
 import CodeBlock from '@tiptap/extension-code-block'
 import Dropcursor from '@tiptap/extension-dropcursor'
+import { Table } from '@tiptap/extension-table'
+import { TableRow } from '@tiptap/extension-table-row'
+import { TableHeader } from '@tiptap/extension-table-header'
+import { TableCell } from '@tiptap/extension-table-cell'
 import { usePageStore } from '../store/usePageStore'
 import { Download, MoreHorizontal, Save, Check } from 'lucide-react'
 import html2pdf from 'html2pdf.js'
@@ -73,6 +77,12 @@ export const Editor: React.FC = () => {
       TaskItem.configure({ nested: true }),
       Image,
       CodeBlock,
+      Table.configure({
+        resizable: true,
+      }),
+      TableRow,
+      TableHeader,
+      TableCell,
       Dropcursor.configure({
         color: 'var(--foreground)',
         width: 2,
