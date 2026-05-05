@@ -98,7 +98,7 @@ export const Editor: React.FC = () => {
       forceSaveWithEditor(editor)
     },
     editorProps: {
-      handleDrop: function(view, event, slice, moved) {
+      handleDrop: function(view, event, _slice, moved) {
         if (!moved && event.dataTransfer && event.dataTransfer.files && event.dataTransfer.files[0]) {
           const file = event.dataTransfer.files[0]
           if (file.type.includes('image/')) {
@@ -117,7 +117,7 @@ export const Editor: React.FC = () => {
         }
         return false
       },
-      handlePaste: function(view, event, slice) {
+      handlePaste: function(view, event, _slice) {
         const items = event.clipboardData?.items
         if (items) {
           for (const item of Array.from(items)) {
@@ -181,7 +181,7 @@ export const Editor: React.FC = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
-  const handleExport = (format: 'html' | 'json' | 'pdf' | 'md') => {
+  const handleExport = async (format: 'html' | 'json' | 'pdf' | 'md') => {
     if (!editor || !activePage) return
     
     setShowExport(false)
@@ -205,12 +205,46 @@ export const Editor: React.FC = () => {
       a.click()
     } else if (format === 'md') {
       const turndownService = new TurndownService()
-      const markdown = turndownService.turndown(editor.getHTML())
-      const blob = new Blob([`# ${title}\n\n${markdown}`], { type: 'text/markdown' })
-      const url = URL.createObjectURL(blob)
+      
+      // Use JSZip to bundle the markdown file and extracted images
+      const JSZip = (await import('jszip')).default
+      const zip = new JSZip()
+      const imagesFolder = zip.folder('images')
+      
+      // Parse HTML to extract images and replace their sources
+      const tempDiv = document.createElement('div')
+      tempDiv.innerHTML = editor.getHTML()
+      const images = tempDiv.querySelectorAll('img')
+      
+      let imageCounter = 1
+      images.forEach((img) => {
+        const src = img.getAttribute('src')
+        if (src && src.startsWith('data:image/')) {
+          const matches = src.match(/^data:(image\/\w+);base64,(.+)$/)
+          if (matches && matches.length === 3) {
+            const mimeType = matches[1]
+            const base64Data = matches[2]
+            const extension = mimeType.split('/')[1] === 'jpeg' ? 'jpg' : mimeType.split('/')[1]
+            const filename = `image${imageCounter}.${extension}`
+            
+            if (imagesFolder) {
+              imagesFolder.file(filename, base64Data, { base64: true })
+            }
+            
+            img.setAttribute('src', `images/${filename}`)
+            imageCounter++
+          }
+        }
+      })
+      
+      const markdown = turndownService.turndown(tempDiv.innerHTML)
+      zip.file('README.md', `# ${title}\n\n${markdown}`)
+      
+      const content = await zip.generateAsync({ type: 'blob' })
+      const url = URL.createObjectURL(content)
       const a = document.createElement('a')
       a.href = url
-      a.download = `${title}.md`
+      a.download = `${title}.zip`
       a.click()
     } else if (format === 'pdf') {
       const element = document.createElement('div')
@@ -276,7 +310,7 @@ export const Editor: React.FC = () => {
           {showExport && (
             <div className="absolute right-0 top-full mt-1 w-40 bg-popover border border-border rounded-lg shadow-xl py-1.5 z-50 overflow-hidden text-[14px]">
               <div className="px-3 py-1.5 text-xs font-semibold text-foreground-muted mb-1 uppercase tracking-wider">Export As</div>
-              <button onClick={() => handleExport('md')} className="w-full text-left px-3 py-1.5 hover:bg-hover text-foreground transition-colors duration-150">Markdown</button>
+              <button onClick={() => handleExport('md')} className="w-full text-left px-3 py-1.5 hover:bg-hover text-foreground transition-colors duration-150">Markdown (ZIP)</button>
               <button onClick={() => handleExport('html')} className="w-full text-left px-3 py-1.5 hover:bg-hover text-foreground transition-colors duration-150">HTML</button>
               <button onClick={() => handleExport('pdf')} className="w-full text-left px-3 py-1.5 hover:bg-hover text-foreground transition-colors duration-150">PDF</button>
               <div className="h-[1px] bg-border my-1 mx-2" />

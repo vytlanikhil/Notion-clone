@@ -34,7 +34,6 @@ interface PageState {
 }
 
 // Ensure ipcRenderer is available
-const isElectron = !!(window as any).ipcRenderer
 const ipcRenderer = (window as any).ipcRenderer || {
   invoke: async (channel: string, ...args: any[]) => {
     // Web Browser Fallback using LocalStorage
@@ -105,7 +104,7 @@ export const usePageStore = create<PageState>((set, get) => ({
       const lastActive = localStorage.getItem('lastActivePageId')
       const currentActive = get().activePageId
       if (!currentActive && pages.length > 0) {
-        const pageToSelect = pages.find(p => p.id === lastActive) || pages[0]
+        const pageToSelect = pages.find((p: Page) => p.id === lastActive) || pages[0]
         get().setActivePage(pageToSelect.id)
       }
     } catch (error) {
